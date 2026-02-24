@@ -1,0 +1,57 @@
+# Arch-Maintainer: Christian Heusel <gromit@archlinux.org>i
+# Arch-Maintainer: Levente Polyak <anthraxx[at]archlinux[dot]org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=catch2
+pkgver=3.11.0
+pkgrel=1
+arch="all"
+url="https://github.com/catchorg/Catch2"
+pkgdesc="A modern, C++-native, header-only, test framework for unit-tests"
+license="BSL-1.0"
+depends="libc++"
+makedepends="
+    cmake
+    python3
+    ninja
+    clang
+    libc++-dev
+    "
+source="https://github.com/catchorg/Catch2/archive/v$pkgver/catch2-v$pkgver.tar.gz"
+subpackages="$pkgname-doc"
+builddir="$srcdir/Catch2-$pkgver"
+options="!check"
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    CFLAGS="$CFLAGS -Qunused-arguments" \
+    CXXFLAGS="$CXXFLAGS -Qunused-arguments" \
+    CPPFLAGS="$CPPFLAGS -Qunused-arguments" \
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCATCH_ENABLE_WERROR=False \
+        -DCATCH_BUILD_EXAMPLES=OFF \
+        -DCATCH_ENABLE_COVERAGE=OFF \
+        -DBUILD_TESTING="$(want_check && echo ON || echo OFF)" \
+        -DCATCH_DEVELOPMENT_BUILD=ON \
+        -Wno-dev \
+        -DBUILD_SHARED_LIBS=OFF \
+
+    cmake --build build
+}
+
+check() {
+    # ApprovalTests is broken https://github.com/catchorg/Catch2/issues/1780
+    ctest --test-dir build --output-on-failure --parallel $(nproc) -E "ApprovalTests"
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+
+sha512sums="
+a95495142f915d6e9c2a23e80fe360343e9097680066a2f9d3037a070ba5f81ee5559a0407cc9e972dc2afae325873f1fc7ea07a64012c0f01aac6e549f03e3f  catch2-v3.11.0.tar.gz
+"
